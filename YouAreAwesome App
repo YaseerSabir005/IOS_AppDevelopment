@@ -1,29 +1,28 @@
-
-
+//
+//  ContentView.swift
+//  ThrowAway2
+//
 //  Created by Sabir, Yaseer A on 1/11/24.
+//
+//
 
+// Things learnt in this app: variable declaration, scope, text, images, button creation, playing sounds, random images, random text, 
 import SwiftUI
+import AVFAudio
 
 struct ContentView: View {
     @State private var messageString = ""
     @State private var imageName = ""
-    @State private var imageNumber = 0
-    @State private var messageNumber = 0
+    @State private var lastMessageNumber = -1
+    @State private var lastImageNumber = -1
+    @State private var lastSoundNumber = -1
+    @State private var audioPlayer: AVAudioPlayer!
+    @State private var soundIsOn = true
+    
     var body: some View {
         
         
         VStack {
-            
-            Image(imageName)
-                .resizable()
-                .scaledToFit()
-                .cornerRadius(30)
-                .shadow(radius: /*@START_MENU_TOKEN@*/12/*@END_MENU_TOKEN@*/)
-                .imageScale(/*@START_MENU_TOKEN@*/.large/*@END_MENU_TOKEN@*/)
-            
-            
-            Spacer()
-            
             
             Text(messageString)
                 .font(.largeTitle)
@@ -35,36 +34,87 @@ struct ContentView: View {
                 .frame(height: 150)// frame helps to keep the buttons fixed
                 .frame(maxWidth: .infinity)
                 .padding()
+                .animation(.easeInOut(duration: 0.15), value: messageString)
             
+            Image(imageName)
+                .resizable()
+                .scaledToFit()
+                .cornerRadius(30)
+                .shadow(radius: /*@START_MENU_TOKEN@*/12/*@END_MENU_TOKEN@*/)
+                .imageScale(/*@START_MENU_TOKEN@*/.large/*@END_MENU_TOKEN@*/)
+                .animation(.default, value: messageString)
             
             Spacer()
             
-            Button("Show Message") {
+            HStack{
                 
-                let messages = ["You Are Awesome",
-                                "You Are Great",
-                                "Fabulous? That's You",
-                                "You Are Extroadinary! "]
-                // messageString = (messageString == message1 ? message2 : message1)
-                let messageRoll = Int.random(in: 0...messages.count-1)
+                Text("Sound On:")
+                Toggle("", isOn: $soundIsOn)
+                    .labelsHidden()
+                    .onChange(of: soundIsOn) { _ in
+                        if audioPlayer != nil && audioPlayer.isPlaying {
+                            audioPlayer.stop()
+                        }
+                    }
+                    .tint(.indigo)
                 
-                messageString = messages[messageRoll]
-                messageNumber += 1
-                if messageNumber == messages.count{
-                    messageNumber = 0
+                Spacer()
+                
+                Button("Show Message") {
+                    
+                    let messages = ["You Are Awesome",
+                                    "You Are Great",
+                                    "Fabulous? That's You",
+                                    "You Are Extroadinary! "]
+                    
+                    lastMessageNumber = nonRepeatingRandom(lastNumber: lastMessageNumber, upperBounds: messages.count-1)
+                    messageString = messages[lastMessageNumber]
+                    
+                    lastImageNumber = nonRepeatingRandom(lastNumber: lastImageNumber, upperBounds: 9)
+                    
+                    imageName = "image\(lastImageNumber)"
+                    
+                    
+                    
+                    //RANDOM SOUNDS
+                    lastSoundNumber = nonRepeatingRandom(lastNumber: lastSoundNumber, upperBounds: 5)
+                    if soundIsOn {
+                        playSound(soundName: "sound\(lastSoundNumber)")
+                    }
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(.indigo)
                 
-                //TODO: update the imageName variable
-                let imageRoll = Int.random(in: 0...9)
-                imageName = "image\(imageRoll)"
-
             }
-            
+            .buttonStyle(.borderedProminent)
         }
-        .buttonStyle(.borderedProminent)
-        
         .padding()
     }
+    
+    func playSound(soundName: String) {
+        guard let soundFile = NSDataAsset(name: soundName) else
+        {
+            print("😡 Could not read file names \(soundName)")
+            return
+        }
+        do {
+            audioPlayer = try AVAudioPlayer(data: soundFile.data)
+            audioPlayer.play()
+        }
+        catch{
+            print("😡 ERROR: \(error.localizedDescription)")
+        }
+    }
+    
+    func nonRepeatingRandom(lastNumber: Int, upperBounds: Int) -> Int{
+        var newNumber: Int
+        repeat{
+            newNumber = Int.random(in: 0...upperBounds)
+            
+        } while newNumber == lastNumber
+        return newNumber
+    }
+    
     
 }
 
