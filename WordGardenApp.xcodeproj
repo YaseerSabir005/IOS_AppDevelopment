@@ -10,12 +10,19 @@ import SwiftUI
 struct ContentView: View {
     @State private var wordsGuessed = 0
     @State private var wordsMissed = 0
-    @State private var wordsToGuess = ["SWIFT", "DOG", "CAT"]
+    @State private var currentWordIndex = 0
+    @State private var wordToGuess = ""
+    @State private var revealedWord = ""
+    @State private var lettersGuessed = ""
+    @State private var guessesRemaining = 8
     @State private var gameStatusMessage = "How Many Guesses to Uncover the Hidden Word?"
     @State private var guessedLetter = ""
     @State private var imageName = "flower8"
     @State private var playAgainHidden = true
     @FocusState private var textFieldIsFocused: Bool
+    
+    private let wordsToGuess = ["SWIFT", "DOG", "CAT"]
+    private let maximumGuesses = 8
     var body: some View {
         VStack {
             HStack{
@@ -36,12 +43,14 @@ struct ContentView: View {
             Text(gameStatusMessage)
                 .font(.title)
                 .multilineTextAlignment(.center)
+                .frame(height: 80)
+                .minimumScaleFactor(0.5)
                 .padding()
             
             //TODO: Switch to wordsToGuess[currentWord]
             
             Spacer()
-            Text("_ _ _ _ _")
+            Text(revealedWord)
                 .font(.title)
             if(playAgainHidden) {
                 HStack{
@@ -64,17 +73,23 @@ struct ContentView: View {
                             }
                             guessedLetter = String(lastChar).uppercased()
                         }
-                    
-                        .focused($textFieldIsFocused)
+                        .onSubmit {
+                        guard guessedLetter != "" else {
+                            return
+                        }
+                        guessALetter()
+                        updateGamePlay()
+                    }
+                    .focused($textFieldIsFocused)
                     
                     Button("Guess a Letter") {
-                        //TODO: Guess a letter button action here
-                        textFieldIsFocused = false
+                        
+                        guessALetter()
+                        updateGamePlay()
                     }
                     .buttonStyle(.bordered)
                     .tint(.mint)
                     .disabled(guessedLetter.isEmpty)
-                    
                 }
             } else {
                 Button("Another Word?"){
@@ -83,6 +98,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.mint)
+                
             }
             Spacer()
             Image(imageName)
@@ -90,6 +106,38 @@ struct ContentView: View {
                 .scaledToFit()
         }
         .ignoresSafeArea(edges: .bottom)
+        .onAppear() {
+            wordToGuess = wordsToGuess[currentWordIndex]
+            // CREATE A STRING FROM A REPEATING VALUE
+            revealedWord = "_" + String(repeating: " _", count: wordToGuess.count-1)
+            guessesRemaining = maximumGuesses
+        }
+    }
+    func guessALetter() {
+        
+        textFieldIsFocused = false
+        lettersGuessed = lettersGuessed + guessedLetter
+        
+        revealedWord = ""
+        //loop through all lettersin wordToGuess
+        for letter in wordToGuess{
+            if lettersGuessed.contains(letter) {
+                revealedWord = revealedWord + "\(letter) "
+            } else {
+                revealedWord = revealedWord + "_ "
+            }
+        }
+        revealedWord.removeLast()
+        guessedLetter = ""
+    }
+    
+    func updateGamePlay() {
+        gameStatusMessage = "You've Made \(lettersGuessed.count) Guess\(lettersGuessed.count == 1 ? "" : "es")"
+        if !wordToGuess.contains(guessedLetter) {
+            guessesRemaining -= 1
+            imageName = "flower\(guessesRemaining)"
+        }
+        guessedLetter = ""
     }
 }
 
@@ -98,4 +146,3 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
-
